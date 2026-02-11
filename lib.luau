@@ -481,7 +481,7 @@ function library.new(title)
                     utility:Create("TextLabel", {
                         Name = "Title",
                         Size = UDim2.new(0, 160, 0, 0),
-                        Position = UDim2.new(0, 60, 0.5, -12),
+                        Position = UDim2.new(0, 60, 0.7, -12),
                         AnchorPoint = Vector2.new(0, 0.5),
                         BackgroundTransparency = 1,
                         Text = "HITTA HUB",
@@ -495,7 +495,7 @@ function library.new(title)
                     utility:Create("TextLabel", {
                         Name = "VersionTime",
                         Size = UDim2.new(0, 250, 0, 0),
-                        Position = UDim2.new(0, 230, 0.5, -8),
+                        Position = UDim2.new(0, 230, 0.7, -8),
                         AnchorPoint = Vector2.new(0, 0.5),
                         BackgroundTransparency = 1,
                         Text = updateTimeDisplay(),
