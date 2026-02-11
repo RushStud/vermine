@@ -41,7 +41,7 @@ local themes = {
     Background = Colors.Black.Dark,
     Glow = Colors.Glow.White,
     Accent = Colors.Black.Medium,
-    LightContrast = Colors.Black.Light, -- Sera utilisé pour l'effet de survol (Hover)
+    LightContrast = Colors.Black.Light,
     DarkContrast = Colors.Black.Pure,
     TextColor = Colors.White.Pure,
     CurrentTheme = "Dark"
@@ -54,9 +54,18 @@ local function updateTimeDisplay()
         local countryCode = Services.LocalizationService:GetCountryRegionForPlayerAsync(player)
 
         local timezones = {
-            US = "EST", FR = "CET", GB = "GMT", DE = "CET", CA = "EST",
-            AU = "AEST", JP = "JST", CN = "CST", RU = "MSK", BR = "BRT",
-            IN = "IST", MX = "CST",
+            US = "EST",
+            FR = "CET",
+            GB = "GMT",
+            DE = "CET",
+            CA = "EST",
+            AU = "AEST",
+            JP = "JST",
+            CN = "CST",
+            RU = "MSK",
+            BR = "BRT",
+            IN = "IST",
+            MX = "CST",
         }
 
         local timezone = timezones[countryCode] or "UTC"
@@ -70,10 +79,103 @@ local function updateTimeDisplay()
 end
 
 local function CreateButtonGlow(button, hoverColor, originalColor, glowColor)
-    -- Fonction existante conservée pour les boutons speciaux si besoin
     if not button or not button.Parent then return end
     glowColor = glowColor or Colors.Glow.White
-    -- (Le reste de la fonction Glow est conservé mais simplifié ici pour la clarté, l'effet Hover principal est géré par utility:AddHover)
+
+    for _, child in pairs(button:GetChildren()) do
+        if child.Name == "GlowBorder" then
+            child:Destroy()
+        end
+    end
+
+    local glowBorder = Instance.new("Frame")
+    glowBorder.Name = "GlowBorder"
+    glowBorder.Size = UDim2.new(1, 12, 1, 12)
+    glowBorder.Position = UDim2.new(0, -6, 0, -6)
+    glowBorder.BackgroundTransparency = 1
+    glowBorder.ZIndex = button.ZIndex - 1
+    glowBorder.Visible = false
+    glowBorder.Parent = button
+
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 16)
+    corner.Parent = glowBorder
+
+    local stroke = Instance.new("UIStroke")
+    stroke.Color = glowColor
+    stroke.Thickness = 2.5
+    stroke.Transparency = 0.8
+    stroke.Parent = glowBorder
+
+    local gradient = Instance.new("UIGradient")
+    local function getBrighterColor(color)
+        local h, s, v = Color3.toHSV(color)
+        v = math.min(v * 1.2, 1.0)
+        return Color3.fromHSV(h, s, v)
+    end
+
+    local brighterColor = getBrighterColor(glowColor)
+    gradient.Color = ColorSequence.new{
+        ColorSequenceKeypoint.new(0, glowColor), 
+        ColorSequenceKeypoint.new(0.5, brighterColor), 
+        ColorSequenceKeypoint.new(1, glowColor)
+    }
+    gradient.Transparency = NumberSequence.new{
+        NumberSequenceKeypoint.new(0, 0.8), 
+        ColorSequenceKeypoint.new(0.2, 0.2), 
+        ColorSequenceKeypoint.new(0.8, 0.2), 
+        NumberSequenceKeypoint.new(1, 0.8)
+    }
+    gradient.Parent = stroke
+
+    local currentTween = nil
+    local glowAnimating = false
+
+    button.MouseEnter:Connect(function()
+        if glowAnimating then return end
+        glowAnimating = true
+        glowBorder.Visible = true
+
+        Services.TweenService:Create(button, TweenInfo.new(0.3), {BackgroundColor3 = hoverColor}):Play()
+        Services.TweenService:Create(stroke, TweenInfo.new(0.3), {Transparency = 0.1}):Play()
+
+        if currentTween then 
+            currentTween:Cancel() 
+            currentTween = nil
+        end
+
+        local rotateTween = Services.TweenService:Create(
+            gradient, 
+            TweenInfo.new(3, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut, -1), 
+            {Rotation = 360}
+        )
+        currentTween = rotateTween
+        rotateTween:Play()
+
+        glowAnimating = false
+    end)
+
+    button.MouseLeave:Connect(function()
+        glowAnimating = true
+
+        Services.TweenService:Create(button, TweenInfo.new(0.3), {BackgroundColor3 = originalColor}):Play()
+        Services.TweenService:Create(stroke, TweenInfo.new(0.4), {Transparency = 0.8}):Play()
+
+        if currentTween then 
+            currentTween:Cancel() 
+            currentTween = nil
+            gradient.Rotation = 0 
+        end
+
+        task.delay(0.4, function()
+            if glowBorder and glowBorder.Parent then 
+                glowBorder.Visible = false 
+            end
+            glowAnimating = false
+        end)
+    end)
+
+    return {glowBorder, stroke, gradient}
 end
 
 local utility = {
@@ -104,7 +206,7 @@ local utility = {
         end
     end,
 
-    -- [AJOUT] Gestion du flou d'arrière-plan (DepthOfField)
+    -- [AJOUT] Fonction pour gérer le DepthOfField (Background Blur)
     ToggleDepthOfField = function(self, enabled)
         local dof = Services.Lighting:FindFirstChild("HITTA_DOF")
         if not dof then
@@ -116,26 +218,10 @@ local utility = {
             dof.NearIntensity = 0
             dof.Parent = Services.Lighting
         end
+
+        -- L'intensité de 0.8 donne un effet verre/flou propre
         local targetIntensity = enabled and 0.8 or 0
         Services.TweenService:Create(dof, TweenInfo.new(0.5, Enum.EasingStyle.Quint), {NearIntensity = targetIntensity}):Play()
-    end,
-
-    -- [AJOUT] Effet de survol (Hover Effect) style Airflow pour les éléments
-    AddHover = function(self, instance)
-        if not instance then return end
-        
-        -- On capture la couleur de base (normalement DarkContrast)
-        local originalColor = instance.ImageColor3
-        -- La couleur de survol sera LightContrast (un gris légèrement plus clair)
-        local hoverColor = themes.LightContrast
-
-        instance.MouseEnter:Connect(function()
-            self:Tween(instance, {ImageColor3 = hoverColor}, 0.25)
-        end)
-
-        instance.MouseLeave:Connect(function()
-            self:Tween(instance, {ImageColor3 = originalColor}, 0.25)
-        end)
     end,
 
     Pop = function(self, object, shrink)
@@ -196,15 +282,20 @@ local utility = {
         local dragStart, startPos
         local currentTouchId = nil
 
+        local dragInput
+
         frame.InputBegan:Connect(function(input)
             if input.UserInputType == Enum.UserInputType.MouseButton1 or 
                 input.UserInputType == Enum.UserInputType.Touch then
+
                 dragging = true
                 dragStart = input.Position
                 startPos = parent.Position
+
                 if input.UserInputType == Enum.UserInputType.Touch then
                     currentTouchId = input.KeyCode
                 end
+
                 local connection
                 connection = input.Changed:Connect(function()
                     if input.UserInputState == Enum.UserInputState.End then
@@ -216,18 +307,46 @@ local utility = {
             end
         end)
 
+        frame.InputChanged:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseMovement then
+                dragInput = input
+            end
+        end)
+
         Services.UserInputService.InputChanged:Connect(function(input)
             if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
                 local delta = input.Position - dragStart
                 parent:TweenPosition(
                     UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, 
                         startPos.Y.Scale, startPos.Y.Offset + delta.Y), 
-                    nil, nil, 0.33333, true
+                    nil,
+                    nil,
+                    0.33333,
+                    true
                 )
             end
         end)
-        
-        -- Touch support omitted for brevity but logic remains the same
+
+        Services.UserInputService.TouchMoved:Connect(function(input, gameProcessed)
+            if dragging and currentTouchId == input.KeyCode then
+                local delta = input.Position - dragStart
+                parent:TweenPosition(
+                    UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, 
+                        startPos.Y.Scale, startPos.Y.Offset + delta.Y), 
+                    nil,
+                    nil,
+                    0.33333,
+                    true
+                )
+            end
+        end)
+
+        Services.UserInputService.TouchEnded:Connect(function(input, gameProcessed)
+            if currentTouchId == input.KeyCode then
+                dragging = false
+                currentTouchId = nil
+            end
+        end)
     end,
 
     DraggingEnded = function(self, callback) 
@@ -267,8 +386,19 @@ library.__index = library
 page.__index = page
 section.__index = section
 
--- Icons table (inchangée)
-local Icons = {Main = "rbxassetid://102603462805125", Fun = "rbxassetid://82754506929523", Updates = "rbxassetid://106623431956692", Movesets = "rbxassetid://99243871319042", Teleport = "rbxassetid://79372497673248", Universal = "rbxassetid://73085793411021", Settings = "rbxassetid://115075597641040", Close = "rbxassetid://91094978625199", Fullscreen = "rbxassetid://135813930497865", Minimize = "rbxassetid://74828798969877"}
+local Icons = {
+    Main = "rbxassetid://102603462805125",
+    Fun = "rbxassetid://82754506929523",
+    Updates = "rbxassetid://106623431956692",
+    Movesets = "rbxassetid://99243871319042",
+    Teleport = "rbxassetid://79372497673248",
+    Universal = "rbxassetid://73085793411021",
+    Settings = "rbxassetid://115075597641040",
+    Close = "rbxassetid://91094978625199",
+    Fullscreen = "rbxassetid://135813930497865",
+    Minimize = "rbxassetid://74828798969877"
+}
+
 
 function section:addMileniumSeparator(thickness, color, offset)
     thickness = thickness or 1
@@ -530,19 +660,19 @@ function page.new(library, title, iconUrl)
         })
     })
 
-    -- Animation Hover pour les Onglets
+    -- [AJOUT] Effet de survol (Hover Animation) style Airflow
     button.MouseEnter:Connect(function()
-        if library.focusedPage ~= nil and library.focusedPage.button == button then return end
+        if library.focusedPage ~= nil and library.focusedPage.button == button then return end -- Ne pas animer si déjà sélectionné
         utility:Tween(button.Title, {TextTransparency = 0.2}, 0.2)
         utility:Tween(button.Icon, {ImageTransparency = 0.2}, 0.2)
-        utility:Tween(button.Icon, {Position = UDim2.new(0, 13, 0.5, 0)}, 0.2) -- Petit décalage vers la droite
+        utility:Tween(button.Icon, {Position = UDim2.new(0, 13, 0.5, 0)}, 0.2) -- Décalage léger vers la droite
     end)
 
     button.MouseLeave:Connect(function()
         if library.focusedPage ~= nil and library.focusedPage.button == button then return end
         utility:Tween(button.Title, {TextTransparency = 0.5}, 0.2)
         utility:Tween(button.Icon, {ImageTransparency = 0.5}, 0.2)
-        utility:Tween(button.Icon, {Position = UDim2.new(0, 10, 0.5, 0)}, 0.2)
+        utility:Tween(button.Icon, {Position = UDim2.new(0, 10, 0.5, 0)}, 0.2) -- Retour position
     end)
 
     local container = utility:Create("ScrollingFrame", {
@@ -632,6 +762,21 @@ function page:addSection(...)
     return section
 end
 
+function library:setTheme(theme, color3)
+    themes[theme] = color3
+    if utility.objects and utility.objects[theme] then
+        for property, objectList in pairs(utility.objects[theme]) do
+            for i, object in pairs(objectList) do
+                if not object or not object.Parent or (object.Name == "Button" and object.Parent.Name == "ColorPicker") then
+                    objectList[i] = nil
+                else
+                    object[property] = color3
+                end
+            end
+        end
+    end
+end
+
 function library:toggle()
     if self.toggling then return end
     self.toggling = true
@@ -639,7 +784,9 @@ function library:toggle()
     
     if self.position then
         utility:Tween(mainFrame, {Size = UDim2.new(0, 650, 0, 500), Position = self.position}, 0.2)
-        utility:ToggleDepthOfField(true) -- Activer Flou
+        -- [AJOUT] Activer le DepthOfField quand on ouvre
+        utility:ToggleDepthOfField(true)
+        
         wait(0.2)
         utility:Tween(mainFrame.ContentGroup.TopBar, {Size = UDim2.new(1, 0, 0, 50)}, 0.2)
         wait(0.2)
@@ -651,13 +798,75 @@ function library:toggle()
         utility:Tween(mainFrame.ContentGroup.TopBar, {Size = UDim2.new(1, 0, 1, 0)}, 0.2)
         wait(0.2)
         utility:Tween(mainFrame, {Size = UDim2.new(0, 650, 0, 0), Position = self.position + UDim2.new(0, 0, 0, 500)}, 0.2)
-        utility:ToggleDepthOfField(false) -- Désactiver Flou
+        
+        -- [AJOUT] Désactiver le DepthOfField quand on ferme
+        utility:ToggleDepthOfField(false)
+        
         wait(0.2)
     end
     self.toggling = false
 end
 
--- BUTTON AVEC HOVER
+function library:Notify(title, text, callback)
+    if self.activeNotification then self.activeNotification = self.activeNotification() end
+    local notification = utility:Create("ImageLabel", {
+        Name = "Notification",
+        Parent = self.container,
+        BackgroundTransparency = 1,
+        Size = UDim2.new(0, 200, 0, 60),
+        Image = "rbxassetid://5028857472",
+        ImageColor3 = themes.Background,
+        ScaleType = Enum.ScaleType.Slice,
+        SliceCenter = Rect.new(4, 4, 296, 296),
+        ZIndex = 3,
+        ClipsDescendants = true
+    }, {
+        utility:Create("ImageLabel", {Name = "Flash", Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, Image = "rbxassetid://4641149554", ImageColor3 = Colors.White.Pure, ZIndex = 5}),
+        utility:Create("ImageLabel", {Name = "Glow", BackgroundTransparency = 1, Position = UDim2.new(0, -15, 0, -15), Size = UDim2.new(1, 30, 1, 30), ZIndex = 2, Image = "rbxassetid://5028857084", ImageColor3 = themes.Glow, ScaleType = Enum.ScaleType.Slice, SliceCenter = Rect.new(24, 24, 276, 276)}),
+        utility:Create("TextLabel", {Name = "Title", BackgroundTransparency = 1, Position = UDim2.new(0, 10, 0, 8), Size = UDim2.new(1, -40, 0, 16), ZIndex = 4, Font = Enum.Font.GothamSemibold, TextColor3 = Colors.White.Pure, TextSize = 14.000, TextXAlignment = Enum.TextXAlignment.Left}),
+        utility:Create("TextLabel", {Name = "Text", BackgroundTransparency = 1, Position = UDim2.new(0, 10, 1, -24), Size = UDim2.new(1, -40, 0, 16), ZIndex = 4, Font = Enum.Font.Gotham, TextColor3 = Colors.White.Pure, TextSize = 12.000, TextXAlignment = Enum.TextXAlignment.Left}),
+        utility:Create("ImageButton", {Name = "Accept", BackgroundTransparency = 1, Position = UDim2.new(1, -26, 0, 8), Size = UDim2.new(0, 16, 0, 16), Image = "rbxassetid://5012538259", ImageColor3 = Colors.White.Pure, ZIndex = 4}),
+        utility:Create("ImageButton", {Name = "Decline", BackgroundTransparency = 1, Position = UDim2.new(1, -26, 1, -24), Size = UDim2.new(0, 16, 0, 16), Image = "rbxassetid://5012538583", ImageColor3 = Colors.White.Pure, ZIndex = 4})
+    })
+    utility.DraggingEnabled(utility, notification)
+    title = title or "Notification"
+    text = text or ""
+    notification.Title.Text = title
+    notification.Text.Text = text
+    local padding = 10
+    local textSize = Services.TextService:GetTextSize(text, 12, Enum.Font.Gotham, Vector2.new(math.huge, 16))
+    notification.Position = library.lastNotification or UDim2.new(0, padding, 1, -(notification.AbsoluteSize.Y + padding))
+    notification.Size = UDim2.new(0, 0, 0, 60)
+    utility:Tween(notification, {Size = UDim2.new(0, textSize.X + 70, 0, 60)}, 0.2)
+    wait(0.2)
+    notification.ClipsDescendants = false
+    utility:Tween(notification.Flash, {Size = UDim2.new(0, 0, 0, 60), Position = UDim2.new(1, 0, 0, 0)}, 0.2)
+    local active = true
+    local close = function()
+        if not active then return end
+        active = false
+        notification.ClipsDescendants = true
+        library.lastNotification = notification.Position
+        notification.Flash.Position = UDim2.new(0, 0, 0, 0)
+        utility:Tween(notification.Flash, {Size = UDim2.new(1, 0, 1, 0)}, 0.2)
+        wait(0.2)
+        utility:Tween(notification, {Size = UDim2.new(0, 0, 0, 60), Position = notification.Position + UDim2.new(0, textSize.X + 70, 0, 0)}, 0.2)
+        wait(0.2)
+        notification:Destroy()
+    end
+    self.activeNotification = close
+    notification.Accept.MouseButton1Click:Connect(function()
+        if not active then return end
+        if callback then callback(true) end
+        close()
+    end)
+    notification.Decline.MouseButton1Click:Connect(function()
+        if not active then return end
+        if callback then callback(false) end
+        close()
+    end)
+end
+
 function section:addButton(title, callback)
     local button = utility:Create("ImageButton", {
         Name = "Button",
@@ -684,7 +893,6 @@ function section:addButton(title, callback)
         })
     })
     table.insert(self.modules, button)
-    utility:AddHover(button) -- AJOUT HOVER
     local text = button.Title
     local debounce
     button.MouseButton1Click:Connect(function()
@@ -701,7 +909,6 @@ function section:addButton(title, callback)
     return button
 end
 
--- TOGGLE AVEC HOVER
 function section:addToggle(title, default, callback)
     local toggle = utility:Create("ImageButton", {
         Name = "Toggle",
@@ -755,7 +962,6 @@ function section:addToggle(title, default, callback)
         })
     })
     table.insert(self.modules, toggle)
-    utility:AddHover(toggle) -- AJOUT HOVER
     local active = default
     self:updateToggle(toggle, nil, active)
     toggle.MouseButton1Click:Connect(function()
@@ -766,7 +972,6 @@ function section:addToggle(title, default, callback)
     return toggle
 end
 
--- TEXTBOX AVEC HOVER
 function section:addTextbox(title, default, callback)
     local textbox = utility:Create("ImageButton", {
         Name = "Textbox",
@@ -820,7 +1025,6 @@ function section:addTextbox(title, default, callback)
         })
     })
     table.insert(self.modules, textbox)
-    utility:AddHover(textbox) -- AJOUT HOVER
     local button = textbox.Button
     local input = button.Textbox
     textbox.MouseButton1Click:Connect(function()
@@ -830,6 +1034,12 @@ function section:addTextbox(title, default, callback)
         input.TextXAlignment = Enum.TextXAlignment.Left
         input:CaptureFocus()
     end)
+    input:GetPropertyChangedSignal("Text"):Connect(function()
+        if button and button.ImageTransparency == 0 and (button.Size == UDim2.new(0, 200, 0, 16) or button.Size == UDim2.new(0, 100, 0, 16)) then
+            utility:Pop(button, 10)
+        end
+        if callback then callback(input.Text, nil, function(...) self:updateTextbox(textbox, ...) end) end
+    end)
     input.FocusLost:Connect(function()
         input.TextXAlignment = Enum.TextXAlignment.Center
         utility:Tween(textbox.Button, {Size = UDim2.new(0, 100, 0, 16), Position = UDim2.new(1, -110, 0.5, -8)}, 0.2)
@@ -838,7 +1048,6 @@ function section:addTextbox(title, default, callback)
     return textbox
 end
 
--- KEYBIND AVEC HOVER
 function section:addKeybind(title, default, callback, changedCallback)
     local keybind = utility:Create("ImageButton", {
         Name = "Keybind",
@@ -891,8 +1100,6 @@ function section:addKeybind(title, default, callback, changedCallback)
         })
     })
     table.insert(self.modules, keybind)
-    utility:AddHover(keybind) -- AJOUT HOVER
-    -- (Reste du code Keybind inchangé)
     local text = keybind.Button.Text
     local button = keybind.Button
     local animate = function()
@@ -917,7 +1124,6 @@ function section:addKeybind(title, default, callback, changedCallback)
     return keybind
 end
 
--- COLORPICKER AVEC HOVER
 function section:addColorPicker(title, default, callback)
     local colorpicker = utility:Create("ImageButton", {
         Name = "ColorPicker",
@@ -958,8 +1164,6 @@ function section:addColorPicker(title, default, callback)
             SliceCenter = Rect.new(2, 2, 298, 298)
         })
     })
-    utility:AddHover(colorpicker) -- AJOUT HOVER
-    -- (Le reste du code ColorPicker reste identique au précédent, la fenêtre popup est gérée pareil)
     local tab = utility:Create("ImageLabel", {
         Name = "ColorPicker",
         Parent = self.page.library.container,
@@ -1309,7 +1513,6 @@ function section:addColorPicker(title, default, callback)
     return colorpicker
 end
 
--- SLIDER AVEC HOVER
 function section:addSlider(title, default, min, max, callback)
     local slider = utility:Create("ImageButton", {
         Name = "Slider",
@@ -1394,9 +1597,11 @@ function section:addSlider(title, default, min, max, callback)
             })
         })
     })
+    
     table.insert(self.modules, slider)
-    utility:AddHover(slider) -- AJOUT HOVER
+
     self:addMileniumSeparator(1, Colors.Main.Separator, 10)
+    
     local allowed = {[""] = true, ["-"] = true}
     local textbox = slider.TextBox
     local circle = slider.Slider.Bar.Fill.Circle
@@ -1433,7 +1638,6 @@ function section:addSlider(title, default, min, max, callback)
     return slider
 end
 
--- DROPDOWN AVEC HOVER
 function section:addDropdown(title, list, callback)
     local dropdown = utility:Create("Frame", {
         Name = "Dropdown",
@@ -1516,7 +1720,6 @@ function section:addDropdown(title, list, callback)
         })
     })
     table.insert(self.modules, dropdown)
-    utility:AddHover(dropdown.Search) -- AJOUT HOVER SUR LA PARTIE RECHERCHE
     local search = dropdown.Search
     local focused
     list = list or {}
@@ -1540,7 +1743,142 @@ function section:addDropdown(title, list, callback)
     return dropdown
 end
 
--- Reste du code unchanged
+-- FONCTIONS DE GESTION DES PAGES
+function library:SelectPage(page, toggle)
+    if toggle and self.focusedPage == page then return end
+    local button = page.button
+    local icon = button:FindFirstChild("Icon")
+
+    if toggle then
+        button.Title.TextTransparency = 0
+        button.Title.Font = Enum.Font.GothamBold
+        if icon then icon.ImageTransparency = 0 end
+        utility:Tween(button.Indicator, {BackgroundTransparency = 0}, 0.2)
+
+        local focusedPage = self.focusedPage
+        self.focusedPage = page
+        if focusedPage then self:SelectPage(focusedPage) end
+
+        local existingSections = focusedPage and #focusedPage.sections or 0
+        local sectionsRequired = #page.sections - existingSections
+        page:Resize()
+
+        for i, section in pairs(page.sections) do 
+            if section and section.container and section.container.Parent then
+                section.container.Parent.Visible = true 
+            end
+        end
+
+        if sectionsRequired < 0 then
+            for i = existingSections, #page.sections + 1, -1 do
+                if focusedPage and focusedPage.sections[i] and focusedPage.sections[i].container and focusedPage.sections[i].container.Parent then
+                    local section = focusedPage.sections[i].container.Parent
+                    section.Visible = false
+                end
+            end
+        end
+
+        wait(0.1)
+        page.container.Visible = true
+        if focusedPage then focusedPage.container.Visible = false end
+
+        if sectionsRequired > 0 then
+            for i = existingSections + 1, #page.sections do
+                if page.sections[i] and page.sections[i].container and page.sections[i].container.Parent then
+                    local section = page.sections[i].container.Parent
+                    section.Visible = true
+                end
+            end
+        end
+
+        wait(0.05)
+        for i, section in pairs(page.sections) do
+            if section then
+                section:Resize(true)
+            end
+            wait(0.05)
+        end
+
+        wait(0.05)
+        page:Resize(true)
+    else
+        button.Title.Font = Enum.Font.Gotham
+        button.Title.TextTransparency = 0.5
+        if icon then icon.ImageTransparency = 0.5 end
+        utility:Tween(button.Indicator, {BackgroundTransparency = 1}, 0.2)
+
+        for i, section in pairs(page.sections) do     
+            if section and section.container and section.container.Parent then
+                utility:Tween(section.container.Parent, {Size = UDim2.new(1, -20, 0, 28)}, 0.1)
+            end
+        end
+
+        wait(0.1)
+        page.lastPosition = page.container.CanvasPosition.Y
+        page:Resize()
+    end
+end
+
+function page:Resize(scroll)
+    local padding = 15
+    local size = 0
+    for i, section in pairs(self.sections) do 
+        if section and section.container and section.container.Parent then
+            size = size + section.container.Parent.AbsoluteSize.Y + padding 
+        end
+    end
+    self.container.CanvasSize = UDim2.new(0, 0, 0, size)
+    self.container.ScrollBarImageTransparency = size > self.container.AbsoluteSize.Y
+    if scroll and self.container then 
+        utility:Tween(self.container, {CanvasPosition = Vector2.new(0, self.lastPosition or 0)}, 0.2) 
+    end
+end
+
+-- FONCTION RESIZE MODIFIÉE POUR GÉRER LES SÉPARATEURS
+function section:Resize(smooth)
+    if self.page.library.focusedPage ~= self.page then return end
+    
+    local padding = 8
+    local size = (2 * padding) + self.container.Title.AbsoluteSize.Y
+    
+    -- Variable pour suivre la position Y
+    local currentY = self.container.Title.AbsoluteSize.Y + padding
+    
+    for i, module in pairs(self.modules) do 
+        if module and module.Parent then
+            -- NE PAS COMPTER LES SÉPARATEURS DANS LA HAUTEUR
+            if not string.find(module.Name, "Separator") then
+                -- Positionner l'élément
+                module.Position = UDim2.new(0, 0, 0, currentY)
+                
+                -- Ajuster la taille totale
+                size = size + module.AbsoluteSize.Y + padding
+                currentY = currentY + module.AbsoluteSize.Y + padding
+            else
+                -- Positionner le séparateur APRÈS l'élément précédent
+                module.Position = UDim2.new(0, 10, 0, currentY - padding/2)
+            end
+        end
+    end
+    
+    if smooth and self.container and self.container.Parent then
+        utility:Tween(self.container.Parent, {Size = UDim2.new(1, -20, 0, size)}, 0.05)
+    elseif self.container and self.container.Parent then 
+        self.container.Parent.Size = UDim2.new(1, -20, 0, size) 
+        self.page:Resize() 
+    end
+end
+
+-- FONCTIONS DE MISE À JOUR
+function section:getModule(info)
+    if table.find(self.modules, info) then return info end
+    for i, module in pairs(self.modules) do
+        local title = module:FindFirstChild("Title") or module:FindFirstChild("TextBox", true)
+        if title and title.Text == info then return module end
+    end
+    error("No module found under "..tostring(info))
+end
+
 function section:updateButton(button, title) 
     button = self:getModule(button) 
     if button and button.Title then
