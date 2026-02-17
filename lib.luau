@@ -21,14 +21,14 @@ local camera = workspace.CurrentCamera
 dcConnections = dcConnections or {}
 
 local Colors = {
-	Black = {Pure = Color3.new(0,0,0), Dark = Color3.new(0.04,0.04,0.04), Medium = Color3.new(0.06,0.06,0.06), Light = Color3.new(0.1,0.1,0.1)},
+	Black = {Pure = Color3.fromRGB(8, 7, 6), Dark = Color3.fromRGB(16, 14, 9), Medium = Color3.fromRGB(22, 19, 14), Light = Color3.fromRGB(32, 28, 20)},
 	White = {Pure = Color3.new(1,1,1), Bright = Color3.new(0.94,0.94,0.94), Light = Color3.new(0.86,0.86,0.86), Medium = Color3.new(0.71,0.71,0.71)},
 	Glow = {White = Color3.new(1,1,1)},
 	Green = {Glow = Color3.fromRGB(76,217,100)},
 	Main = {
-		Separator = Color3.fromRGB(36, 36, 37),
-		LightSeparator = Color3.fromRGB(72, 72, 73),
-		DarkSeparator = Color3.fromRGB(21, 21, 23),
+		Separator = Color3.fromRGB(58, 55, 50),
+		LightSeparator = Color3.fromRGB(90, 85, 75),
+		DarkSeparator = Color3.fromRGB(28, 25, 18),
 		Shadow = Color3.new(0, 0, 0)
 	}
 }
@@ -540,9 +540,6 @@ function library.new(title)
                     BorderSizePixel = 0,
                     ZIndex = 2
                 }, {
-                    utility:Create("UICorner", {
-                        CornerRadius = UDim.new(0, 14)
-                    }),
                     utility:Create("Frame", {
                         Name = "SidePanelSeparator",
                         AnchorPoint = Vector2.new(1, 0),
@@ -872,7 +869,7 @@ function section:addButton(title, callback)
 		utility:Create("UIStroke", {
 			Color = Colors.Main.Separator,
 			Thickness = 1,
-			Transparency = 0.5,
+			Transparency = 0,
 			LineJoinMode = Enum.LineJoinMode.Round
 		}),
 		utility:Create("TextLabel", {
@@ -949,7 +946,7 @@ function section:addToggle(title, default, callback)
 		utility:Create("UIStroke", {
 			Color = Colors.Main.Separator,
 			Thickness = 1,
-			Transparency = 0.5,
+			Transparency = 0,
 			LineJoinMode = Enum.LineJoinMode.Round
 		}),
 		utility:Create("TextLabel", {
@@ -1102,7 +1099,7 @@ function section:addTextbox(title, default, callback)
 		utility:Create("UIStroke", {
 			Color = Colors.Main.Separator,
 			Thickness = 1,
-			Transparency = 0.5,
+			Transparency = 0,
 			LineJoinMode = Enum.LineJoinMode.Round
 		}),
 		utility:Create("TextLabel", {
@@ -1179,7 +1176,7 @@ function section:addKeybind(title, default, callback, changedCallback)
 		utility:Create("UIStroke", {
 			Color = Colors.Main.Separator,
 			Thickness = 1,
-			Transparency = 0.5,
+			Transparency = 0,
 			LineJoinMode = Enum.LineJoinMode.Round
 		}),
 		utility:Create("TextLabel", {
@@ -1255,7 +1252,7 @@ function section:addColorPicker(title, default, callback)
 		utility:Create("UIStroke", {
 			Color = Colors.Main.Separator,
 			Thickness = 1,
-			Transparency = 0.5,
+			Transparency = 0,
 			LineJoinMode = Enum.LineJoinMode.Round
 		}),
 		utility:Create("TextLabel", {
@@ -1289,7 +1286,7 @@ function section:addColorPicker(title, default, callback)
 			utility:Create("UIStroke", {
 				Color = Colors.Main.Separator,
 				Thickness = 1,
-				Transparency = 0.5
+				Transparency = 0
 			})
 		})
 	})
@@ -1666,7 +1663,7 @@ function section:addSlider(title, default, min, max, callback)
 		utility:Create("UIStroke", {
 			Color = Colors.Main.Separator,
 			Thickness = 1,
-			Transparency = 0.5,
+			Transparency = 0,
 			LineJoinMode = Enum.LineJoinMode.Round
 		}),
 		utility:Create("TextLabel", {
@@ -1839,7 +1836,7 @@ function section:addDropdown(title, list, callback)
 			utility:Create("UIStroke", {
 				Color = Colors.Main.Separator,
 				Thickness = 1,
-				Transparency = 0.5,
+				Transparency = 0,
 				LineJoinMode = Enum.LineJoinMode.Round
 			}),
 			utility:Create("TextBox", {
