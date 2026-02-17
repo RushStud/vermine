@@ -21,16 +21,36 @@ local camera = workspace.CurrentCamera
 dcConnections = dcConnections or {}
 
 local Colors = {
-	Black = {Pure = Color3.fromRGB(8, 7, 6), Dark = Color3.fromRGB(16, 14, 9), Medium = Color3.fromRGB(22, 19, 14), Light = Color3.fromRGB(32, 28, 20)},
-	White = {Pure = Color3.new(1,1,1), Bright = Color3.new(0.94,0.94,0.94), Light = Color3.new(0.86,0.86,0.86), Medium = Color3.new(0.71,0.71,0.71)},
+	Black = {
+		Pure    = Color3.fromRGB(6, 6, 6),      -- row3 col1 - background principal
+		Dark    = Color3.fromRGB(10, 10, 10),    -- row3 col2
+		Medium  = Color3.fromRGB(50, 49, 47),    -- row2 col1 - panels
+		Light   = Color3.fromRGB(62, 61, 58),    -- row2 col2 - hover
+	},
+	White = {
+		Pure    = Color3.new(1,1,1),
+		Bright  = Color3.fromRGB(240, 238, 235), -- row1 col5
+		Light   = Color3.fromRGB(210, 208, 204), -- row1 col4
+		Medium  = Color3.fromRGB(155, 152, 147), -- row1 col2
+	},
 	Glow = {White = Color3.new(1,1,1)},
 	Green = {Glow = Color3.fromRGB(76,217,100)},
 	Main = {
-		Separator = Color3.fromRGB(58, 55, 50),
-		LightSeparator = Color3.fromRGB(90, 85, 75),
-		DarkSeparator = Color3.fromRGB(28, 25, 18),
-		Shadow = Color3.new(0, 0, 0)
+		Separator     = Color3.fromRGB(75, 73, 70),   -- row2 col3
+		LightSeparator = Color3.fromRGB(100, 98, 94),
+		DarkSeparator  = Color3.fromRGB(35, 34, 33),
+		Shadow         = Color3.new(0, 0, 0)
 	}
+}
+
+local themes = {
+	Background    = Colors.Black.Dark,
+	Glow          = Colors.Glow.White,
+	Accent        = Colors.Black.Medium,
+	LightContrast = Colors.Black.Light,
+	DarkContrast  = Colors.Black.Pure,
+	TextColor     = Colors.White.Pure,
+	CurrentTheme  = "Dark"
 }
 
 local themes = {
