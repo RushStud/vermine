@@ -598,7 +598,7 @@ function library.new(title)
                     ScrollBarThickness = 0,
                     ScrollBarImageColor3 = themes.DarkContrast,
                     ZIndex = 2,
-                    ClipsDescendants = false
+                    ClipsDescendants = true
                 }, {
                     utility:Create("UIPadding", {
                         PaddingLeft = UDim.new(0, 2),
@@ -704,7 +704,8 @@ function page.new(library, title, iconUrl)
 		Active = true,
 		BackgroundTransparency = 1,
 		BorderSizePixel = 0,
-		Size = UDim2.new(1, 0, 1, 0),
+		Size = UDim2.new(1, -4, 1, 0),
+		Position = UDim2.new(0, 2, 0, 0),
 		CanvasSize = UDim2.new(0, 0, 0, 600),
 		ScrollBarThickness = 0,
 		ScrollBarImageColor3 = themes.DarkContrast,
