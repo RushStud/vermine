@@ -715,11 +715,12 @@ function page.new(library, title, iconUrl)
 		utility:Create("UIPadding", {
 			PaddingLeft = UDim.new(0, 20),
 			PaddingRight = UDim.new(0, 20),
-			PaddingTop = UDim.new(0, 15)
+			PaddingTop = UDim.new(0, 15),
+			PaddingBottom = UDim.new(0, 2)
 		}),
 		utility:Create("UIListLayout", {
 			SortOrder = Enum.SortOrder.LayoutOrder,
-			Padding = UDim.new(0, 10)
+			Padding = UDim.new(0, 14)
 		})
 	})
 
@@ -750,7 +751,8 @@ function section.new(page, title, hideTitle)
 		}, {
 			utility:Create("UIPadding", {
 				PaddingLeft = UDim.new(0, 2),
-				PaddingRight = UDim.new(0, 2)
+				PaddingRight = UDim.new(0, 2),
+				PaddingBottom = UDim.new(0, 2)
 			}),
 			utility:Create("UIListLayout", {
 				SortOrder = Enum.SortOrder.LayoutOrder,
@@ -873,7 +875,7 @@ function section:addButton(title, callback)
 	local button = utility:Create("TextButton", {
 		Name = "Button",
 		Parent = self.container,
-		BackgroundColor3 = themes.DarkContrast,
+		BackgroundColor3 = themes.Accent,
 		BackgroundTransparency = 0,
 		BorderSizePixel = 0,
 		Size = UDim2.new(1, 0, 0, 32),
