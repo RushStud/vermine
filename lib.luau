@@ -2217,9 +2217,23 @@ function section:updateDropdown(dropdown, title, list, callback)
 	end
 	
 	local frame = dropdown.List.Frame
-	utility:Tween(dropdown, {Size = UDim2.new(1, 0, 0, (entries == 0 and 38) or math.clamp(entries, 0, 3) * 34 + 46)}, 0.3)
+	utility:Tween(dropdown, {Size = UDim2.new(1, 0, 0, (entries == 0 and 32) or math.clamp(entries, 0, 3) * 34 + 46)}, 0.3)
 	if dropdown.Search and dropdown.Search.Button then
 		utility:Tween(dropdown.Search.Button, {Rotation = list and 180 or 0}, 0.3)
+	end
+	
+	local listFrame = dropdown.List
+	if list and entries > 0 then
+		-- Reparenter la List au MainContent pour éviter le clipping
+		local mainContent = dropdown:FindFirstAncestor("MainContent")
+		if mainContent then
+			listFrame.Parent = mainContent
+			listFrame.Position = UDim2.new(0, dropdown.AbsolutePosition.X - mainContent.AbsolutePosition.X, 0, dropdown.AbsolutePosition.Y - mainContent.AbsolutePosition.Y + 32)
+			listFrame.Size = UDim2.new(0, dropdown.AbsoluteSize.X, 1, -46)
+		end
+	else
+		listFrame.Parent = dropdown
+		listFrame.Size = UDim2.new(1, 0, 1, -42)
 	end
 	
 	if entries > 3 then
