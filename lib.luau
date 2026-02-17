@@ -439,12 +439,8 @@ function library.new(title)
             Position = UDim2.new(0.5, -350, 0.5, -275),
             Size = UDim2.new(0, 700, 0, 550),
             BorderSizePixel = 0,
-            ZIndex = 1,
-            ClipsDescendants = true
+            ZIndex = 1
         }, {
-            utility:Create("UICorner", {
-                CornerRadius = UDim.new(0, 14)
-            }),
             utility:Create("ImageLabel", {
                 Name = "shadow",
                 ImageColor3 = Colors.Main.Shadow,
@@ -544,6 +540,9 @@ function library.new(title)
                     BorderSizePixel = 0,
                     ZIndex = 2
                 }, {
+                    utility:Create("UICorner", {
+                        CornerRadius = UDim.new(0, 14)
+                    }),
                     utility:Create("Frame", {
                         Name = "SidePanelSeparator",
                         AnchorPoint = Vector2.new(1, 0),
