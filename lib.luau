@@ -1856,12 +1856,6 @@ function section:addDropdown(title, list, callback)
 			utility:Create("UICorner", {
 				CornerRadius = UDim.new(0, 10)
 			}),
-			utility:Create("UIStroke", {
-				Color = Colors.Main.Separator,
-				Thickness = 1,
-				Transparency = 0,
-				LineJoinMode = Enum.LineJoinMode.Round
-			}),
 			utility:Create("TextBox", {
 				Name = "TextBox",
 				AnchorPoint = Vector2.new(0, 0.5),
