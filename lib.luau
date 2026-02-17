@@ -36,9 +36,9 @@ local Colors = {
 	Glow = {White = Color3.new(1,1,1)},
 	Green = {Glow = Color3.fromRGB(76,217,100)},
 	Main = {
-		Separator     = Color3.fromRGB(75, 73, 70),   -- row2 col3
-		LightSeparator = Color3.fromRGB(100, 98, 94),
-		DarkSeparator  = Color3.fromRGB(35, 34, 33),
+		Separator     = Color3.fromRGB(80, 80, 80),
+		LightSeparator = Color3.fromRGB(120, 120, 120),
+		DarkSeparator  = Color3.fromRGB(40, 40, 40),
 		Shadow         = Color3.new(0, 0, 0)
 	}
 }
@@ -598,11 +598,11 @@ function library.new(title)
                     ScrollBarThickness = 0,
                     ScrollBarImageColor3 = themes.DarkContrast,
                     ZIndex = 2,
-                    ClipsDescendants = true
+                    ClipsDescendants = false
                 }, {
                     utility:Create("UIPadding", {
-                        PaddingLeft = UDim.new(0, 0),
-                        PaddingRight = UDim.new(0, 0),
+                        PaddingLeft = UDim.new(0, 2),
+                        PaddingRight = UDim.new(0, 2),
                         PaddingTop = UDim.new(0, 20)
                     }),
                     utility:Create("UIListLayout", {
@@ -1836,7 +1836,7 @@ function section:addDropdown(title, list, callback)
 		Parent = self.container,
 		BackgroundTransparency = 1,
 		Size = UDim2.new(1, 0, 0, 32),
-		ClipsDescendants = true
+		ClipsDescendants = false
 	}, {
 		utility:Create("UIListLayout", {
 			SortOrder = Enum.SortOrder.LayoutOrder,
