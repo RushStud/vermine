@@ -587,19 +587,19 @@ function library.new(title)
                     })
                 }),
                 
-                utility:Create("ScrollingFrame", {
-                    Name = "MainContent",
-                    Active = true,
-                    BackgroundTransparency = 1,
-                    BorderSizePixel = 0,
-                    Position = UDim2.new(0, 200, 0, 50),
-                    Size = UDim2.new(1, -200, 1, -50),
-                    CanvasSize = UDim2.new(0, 0, 0, 650),
-                    ScrollBarThickness = 0,
-                    ScrollBarImageColor3 = themes.DarkContrast,
-                    ZIndex = 2,
-                    ClipsDescendants = true
-                }, {
+           utility:Create("ScrollingFrame", {
+    Name = "MainContent",
+    Active = true,
+    BackgroundTransparency = 1,
+    BorderSizePixel = 0,
+    Position = UDim2.new(0, 200, 0, 50),
+    Size = UDim2.new(1, -200, 1, -50),
+    CanvasSize = UDim2.new(0, 0, 0, 650),
+    ScrollBarThickness = 0,
+    ScrollBarImageColor3 = themes.DarkContrast,
+    ZIndex = 2,
+    ClipsDescendants = true -- ❌ C'est ceci qui coupe tes effets !
+},{
                     utility:Create("UIPadding", {
                         PaddingLeft = UDim.new(0, 2),
                         PaddingRight = UDim.new(0, 2),
