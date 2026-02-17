@@ -2043,13 +2043,14 @@ function section:Resize(smooth)
 	if self.page.library.focusedPage ~= self.page then return end
 	
 	local padding = 10
-	local size = 10
+	local size = 12
 	
 	for i, module in pairs(self.modules) do 
 		if module and module.Parent then
 			size = size + module.AbsoluteSize.Y + padding
 		end
 	end
+	size = size + 2
 	
 	if smooth and self.container and self.container.Parent then
 		utility:Tween(self.container.Parent, {Size = UDim2.new(1, 0, 0, size)}, 0.05)
